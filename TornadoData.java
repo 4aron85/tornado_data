@@ -1,9 +1,9 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,61 +14,33 @@ public class TornadoData {
         String separator = ",";
         Map<String, Integer> tornadoCount = new HashMap<>();
 
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             reader.readLine(); // Skip header
             while ((line = reader.readLine()) != null) {
                 String[] data = line.split(separator);
                 String dateStr = data[0];
-                SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy");
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(dateFormat.parse(dateStr));
-                int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-                String dayOfWeekStr = getDayOfWeek(dayOfWeek);
+                LocalDate date = LocalDate.parse(dateStr, dateFormatter);
+                DayOfWeek dayOfWeek = date.getDayOfWeek();
+                String dayOfWeekStr = dayOfWeek.toString();
                 tornadoCount.put(dayOfWeekStr, tornadoCount.getOrDefault(dayOfWeekStr, 0) + 1);
             }
 
             System.out.println("Day\tTornado Count");
             System.out.println("-----------------");
-            for (Map.Entry<String, Integer> entry : tornadoCount.entrySet()) {
-                System.out.println(entry.getKey() + "\t" + entry.getValue());
-            }
+            tornadoCount.forEach((day, count) -> System.out.println(day + "\t" + count));
 
-            int maxCount = 0;
-            for (int count : tornadoCount.values()) {
-                if (count > maxCount) {
-                    maxCount = count;
-                }
-            }
+            int maxCount = tornadoCount.values().stream().mapToInt(Integer::intValue).max().orElse(0);
             System.out.println("\nDay(s) with the most tornadoes:");
-            for (Map.Entry<String, Integer> entry : tornadoCount.entrySet()) {
-                if (entry.getValue() == maxCount) {
-                    System.out.println(entry.getKey());
+            tornadoCount.forEach((day, count) -> {
+                if (count == maxCount) {
+                    System.out.println(day);
                 }
-            }
+            });
 
-        } catch (IOException | ParseException e) {
+        } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private static String getDayOfWeek(int dayOfWeek) {
-        switch (dayOfWeek) {
-            case Calendar.SUNDAY:
-                return "Sunday";
-            case Calendar.MONDAY:
-                return "Monday";
-            case Calendar.TUESDAY:
-                return "Tuesday";
-            case Calendar.WEDNESDAY:
-                return "Wednesday";
-            case Calendar.THURSDAY:
-                return "Thursday";
-            case Calendar.FRIDAY:
-                return "Friday";
-            case Calendar.SATURDAY:
-                return "Saturday";
-            default:
-                return "";
         }
     }
 }
